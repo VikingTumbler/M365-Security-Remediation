@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "M365 Security Finding",
+  "description": "Schema for an individual security finding produced by an analyzer.",
+  "type": "object",
+  "required": ["id", "domain", "control_name", "severity", "detection_logic"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique finding identifier (e.g., IDENT-001)",
+      "pattern": "^[A-Z]+-\\d{3,}$"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Security domain",
+      "enum": ["identity", "conditional_access", "privileged_access", "device", "app", "monitoring"]
+    },
+    "control_name": {
+      "type": "string",
+      "description": "Human-readable control or finding name"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", "info"]
+    },
+    "maturity_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "0=None, 1=Initial, 2=Developing, 3=Defined, 4=Managed, 5=Optimized"
+    },
+    "detection_logic": {
+      "type": "string",
+      "description": "Technical description of how the finding was detected"
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Structured evidence data supporting the finding"
+    },
+    "risk_explanation": {
+      "type": "string",
+      "description": "Plain-language explanation of the risk"
+    },
+    "exploit_scenario": {
+      "type": "string",
+      "description": "Realistic attack scenario exploiting this gap"
+    },
+    "blast_radius": {
+      "type": "string",
+      "description": "Scope of impact if exploited"
+    },
+    "score_impact": {
+      "type": "number",
+      "description": "Numeric impact on domain score"
+    },
+    "zero_trust_pillar": {
+      "type": "string",
+      "enum": ["identity", "devices", "applications", "data", "infrastructure", "networks"]
+    },
+    "cis_benchmark": {
+      "type": "string",
+      "description": "CIS M365 Benchmark reference (e.g., CIS 1.1.1)"
+    },
+    "nist_family": {
+      "type": "string",
+      "description": "NIST 800-53 control family (e.g., AC, IA, AU)"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,18 @@
+# M365 Security & IAM Intelligence Engine
+# Python 3.11+
+
+# --- Core HTTP & Async ---
+httpx>=0.27.0
+anyio>=4.0
+
+# --- Microsoft Authentication ---
+msal>=1.28.0
+
+# --- Certificate handling ---
+cryptography>=42.0
+
+# --- Templating ---
+jinja2>=3.1.0
+
+# --- Data / Reporting ---
+# (stdlib: json, csv, sqlite3, asyncio — no extra deps)

@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "M365 Security Scan Result",
+  "description": "Top-level schema for the complete scan output JSON.",
+  "type": "object",
+  "required": ["metadata", "scoring", "findings"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["engine", "version", "scan_id", "generated_utc", "mode"],
+      "properties": {
+        "engine": { "type": "string" },
+        "version": { "type": "string" },
+        "scan_id": { "type": "string" },
+        "generated_utc": { "type": "string", "format": "date-time" },
+        "mode": { "type": "string", "const": "READ-ONLY" }
+      }
+    },
+    "scoring": {
+      "type": "object",
+      "required": ["overall_score", "risk_rating", "total_findings", "domain_scores"],
+      "properties": {
+        "overall_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "risk_rating": {
+          "type": "string",
+          "enum": ["Excellent", "Good", "Moderate", "Concerning", "Poor", "Critical"]
+        },
+        "total_findings": { "type": "integer" },
+        "severity_summary": {
+          "type": "object",
+          "properties": {
+            "critical": { "type": "integer" },
+            "high": { "type": "integer" }
+          }
+        },
+        "domain_scores": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "domain": { "type": "string" },
+              "display_name": { "type": "string" },
+              "score": { "type": "number" },
+              "weight": { "type": "number" },
+              "weighted_contribution": { "type": "number" },
+              "finding_count": { "type": "integer" },
+              "severity_breakdown": {
+                "type": "object",
+                "properties": {
+                  "critical": { "type": "integer" },
+                  "high": { "type": "integer" },
+                  "medium": { "type": "integer" },
+                  "low": { "type": "integer" }
+                }
+              },
+              "maturity_level": { "type": "number" },
+              "total_deductions": { "type": "number" }
+            }
+          }
+        },
+        "framework_mapping": { "type": "object" },
+        "top_10_weaknesses": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "attack_path_simulation": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "finding.json" }
+    },
+    "raw_data_summary": {
+      "type": "object",
+      "description": "Compact summary of collected raw data (counts and keys only)"
+    }
+  }
+}
