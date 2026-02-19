@@ -69,12 +69,9 @@ class MonitoringCollector(BaseCollector):
             skip_top=True,  # This endpoint does not support $top
         )
 
-        # Check for security API connectors
-        partner_info = await self.safe_get(
-            "security/tiIndicators",
-            result,
-            params={"$top": "1"},
-        )
+        # Note: security/tiIndicators was removed from Graph v1.0 and returns
+        # 400 "Resource not found".  Threat intel connector presence is inferred
+        # from security/alerts_v2 accessibility in _collect_alert_rules instead.
 
         result.add_data("diagnostic_settings", {
             "graphSubscriptions": [
@@ -88,7 +85,6 @@ class MonitoringCollector(BaseCollector):
                 for s in subscriptions
             ],
             "graphSubscriptionCount": len(subscriptions),
-            "hasThreatIntelConnector": not partner_info.get("_forbidden", False),
             "note": "Full diagnostic settings require Azure Monitor API access",
         })
 

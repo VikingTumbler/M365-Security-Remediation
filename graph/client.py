@@ -221,11 +221,19 @@ class GraphClient:
                 if resp.get("status") == 200:
                     results.append(resp.get("body", {}))
                 else:
-                    logger.warning(
-                        f"Batch sub-request {resp.get('id')} failed: "
-                        f"{resp.get('status')} — {resp.get('body', {}).get('error', {}).get('message', 'Unknown')}"
-                    )
-                    results.append({"_error": True, "status": resp.get("status")})
+                    status = resp.get("status")
+                    msg = resp.get("body", {}).get("error", {}).get("message", "Unknown")
+                    # 403s are expected permission gaps handled by the caller;
+                    # log at DEBUG to avoid noisy output.
+                    if status == 403:
+                        logger.debug(
+                            f"Batch sub-request {resp.get('id')} permission denied (403): {msg}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Batch sub-request {resp.get('id')} failed: {status} — {msg}"
+                        )
+                    results.append({"_error": True, "status": status, "_error_message": msg})
 
         return results
 
@@ -247,7 +255,15 @@ class GraphClient:
                 self._request_count += 1
 
                 if response.status_code == 200:
-                    return response.json()
+                    if not response.content or not response.content.strip():
+                        # Some endpoints (e.g. WIP policies on tenants that
+                        # don't use WIP) return HTTP 200 with an empty body.
+                        return {"value": []}
+                    try:
+                        return response.json()
+                    except Exception:
+                        logger.debug(f"200 response with non-JSON body from {url}")
+                        return {"value": []}
 
                 if response.status_code == 204:
                     return {}

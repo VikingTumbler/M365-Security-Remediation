@@ -1,18 +1,18 @@
 """
 M365 Security & IAM Intelligence Engine — Main Orchestrator
 
-Usage:
-    python -m m365_security_engine                             # use default profile
-    python -m m365_security_engine --profile contoso-prod      # named profile
-    python -m m365_security_engine --config config.json        # JSON config file
-    python -m m365_security_engine --delegated                 # device-code auth flow
-    python -m m365_security_engine --skip-intune --skip-defender
+Usage (via run.py launcher — required because the folder name contains hyphens):
+    python run.py                                              # use default profile
+    python run.py --profile contoso-prod                       # named profile
+    python run.py --config config.json                         # JSON config file
+    python run.py --delegated                                  # device-code auth flow
+    python run.py --skip-intune --skip-defender
 
 Profile management:
-    python -m m365_security_engine profile add <name> --tenant-id ... --client-id ...
-    python -m m365_security_engine profile list
-    python -m m365_security_engine profile remove <name>
-    python -m m365_security_engine profile set-default <name>
+    python run.py profile add <name> --tenant-id ... --client-id ...
+    python run.py profile list
+    python run.py profile remove <name>
+    python run.py profile set-default <name>
 
 This tool is STRICTLY READ-ONLY. It will NEVER modify the tenant.
 """
@@ -74,7 +74,7 @@ def _profile_list() -> int:
     profiles = store.list_profiles()
     if not profiles:
         print("No profiles configured. Add one with:\n")
-        print("  python -m m365_security_engine profile add <name> \\")
+        print("  python run.py profile add <name> \\")
         print("    --tenant-id <GUID> --client-id <GUID> --cert-path ./base64.txt")
         return 0
 
@@ -276,7 +276,7 @@ def build_config(args: argparse.Namespace) -> EngineConfig:
         print("   • --tenant-id X --client-id Y  (ad-hoc)")
         print("   • --config config.json         (JSON config file)")
         print("\n   To create a profile:")
-        print("   python -m m365_security_engine profile add <name> --tenant-id <GUID> --client-id <GUID>")
+        print("   python run.py profile add <name> --tenant-id <GUID> --client-id <GUID>")
         sys.exit(1)
 
     # Build certificate auth config
@@ -436,7 +436,7 @@ async def main_async():
     # --- Handle profile management sub-commands ---
     if getattr(args, "command", None) == "profile":
         if not getattr(args, "profile_action", None):
-            print("Usage: python -m m365_security_engine profile {add|list|remove|set-default}")
+            print("Usage: python run.py profile {add|list|remove|set-default}")
             sys.exit(0)
         sys.exit(_cmd_profile(args))
 
@@ -477,15 +477,21 @@ async def main_async():
     print("\n🔐 Authenticating...")
     authenticator = Authenticator(config.auth)
 
-    if config.auth.mode == "delegated":
-        token = await authenticator.acquire_token()
-    else:
-        # Certificate-based: config already built with profile/CLI values
-        if not config.auth.certificate:
-            print("❌ No certificate configuration available. Use --profile or --config.")
-            sys.exit(1)
-        # Password will be prompted inside authenticator if blank
-        token = await authenticator.acquire_token()
+    try:
+        if config.auth.mode == "delegated":
+            token = await authenticator.acquire_token()
+        else:
+            # Certificate-based: config already built with profile/CLI values
+            if not config.auth.certificate:
+                print("❌ No certificate configuration available. Use --profile or --config.")
+                sys.exit(1)
+            # Password will be prompted inside authenticator if blank
+            token = await authenticator.acquire_token()
+    except Exception as exc:
+        print(f"\n❌ Authentication failed: {exc}")
+        print("   Check that base64.txt exists, the password is correct, and the")
+        print("   certificate has been uploaded to your Entra app registration.")
+        sys.exit(1)
 
     if not token:
         print("❌ Authentication failed. Exiting.")

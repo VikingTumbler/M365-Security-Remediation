@@ -116,9 +116,13 @@ Place `base64.txt` in the same directory where you run the engine, or specify th
 ## Installation
 
 ```bash
-cd m365_security_engine
+cd M365-Security-Remediation
 pip install -r requirements.txt
 ```
+
+> **Note:** The project folder name (`M365-Security-Remediation`) contains hyphens, which prevents Python's `-m` flag from treating it as an importable package.
+> A `run.py` launcher is included that registers the package under the alias `m365_security_engine` so all relative imports work correctly.
+> **Always use `python run.py` instead of `python -m m365_security_engine`.**
 
 ---
 
@@ -130,8 +134,19 @@ Profiles store tenant credentials so you don't repeat flags every scan.
 
 **1. Register the tenant profile (once per tenant):**
 
+```powershell
+# PowerShell
+python run.py profile add contoso-prod `
+  --tenant-id  "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" `
+  --client-id  "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy" `
+  --cert-path  "./base64.txt" `
+  --display-name "Contoso Corp" `
+  --set-default
+```
+
 ```bash
-python -m m365_security_engine profile add contoso-prod \
+# Bash / macOS / Linux
+python run.py profile add contoso-prod \
   --tenant-id  "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" \
   --client-id  "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy" \
   --cert-path  "./base64.txt" \
@@ -143,10 +158,10 @@ python -m m365_security_engine profile add contoso-prod \
 
 ```bash
 # Uses the default profile automatically
-python -m m365_security_engine
+python run.py
 
 # Or name a specific profile
-python -m m365_security_engine --profile contoso-prod
+python run.py --profile contoso-prod
 ```
 
 **3. Enter the certificate password when prompted:**
@@ -157,21 +172,33 @@ Enter the certificate password: ••••••••
 
 Or set the env var to skip the prompt:
 
-```bash
+```powershell
 # PowerShell
 $env:M365_CERT_PASSWORD = "YourCertPassword"
-python -m m365_security_engine
+python run.py
+```
 
+```bash
 # Bash
-M365_CERT_PASSWORD="YourCertPassword" python -m m365_security_engine
+M365_CERT_PASSWORD="YourCertPassword" python run.py
 ```
 
 ---
 
 ### Option B — Ad-hoc (no profile needed)
 
+```powershell
+# PowerShell
+python run.py `
+  --tenant-id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" `
+  --client-id "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy" `
+  --cert-path "./base64.txt" `
+  --tenant-name "Contoso Corp"
+```
+
 ```bash
-python -m m365_security_engine \
+# Bash
+python run.py \
   --tenant-id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" \
   --client-id "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy" \
   --cert-path "./base64.txt" \
@@ -183,7 +210,7 @@ python -m m365_security_engine \
 ### Option C — Delegated auth (device-code flow)
 
 ```bash
-python -m m365_security_engine --delegated
+python run.py --delegated
 # Opens a browser login — uses your own account permissions
 ```
 
@@ -195,7 +222,7 @@ Profiles are stored in `~/.m365_security_engine/profiles.json` — outside the p
 
 ```bash
 # Add / update a profile
-python -m m365_security_engine profile add <name> \
+python run.py profile add <name> \
   --tenant-id  <GUID> \
   --client-id  <GUID> \
   --cert-path  <path-to-base64.txt> \
@@ -203,29 +230,29 @@ python -m m365_security_engine profile add <name> \
   --set-default          # optional: make this the default
 
 # List all profiles
-python -m m365_security_engine profile list
+python run.py profile list
 
 # Switch the default
-python -m m365_security_engine profile set-default <name>
+python run.py profile set-default <name>
 
 # Remove a profile
-python -m m365_security_engine profile remove <name>
+python run.py profile remove <name>
 ```
 
 **Example with two tenants:**
 
 ```bash
-python -m m365_security_engine profile add contoso \
+python run.py profile add contoso \
   --tenant-id "aaa..." --client-id "bbb..." --cert-path ./contoso_base64.txt --set-default
 
-python -m m365_security_engine profile add fabrikam \
+python run.py profile add fabrikam \
   --tenant-id "ccc..." --client-id "ddd..." --cert-path ./fabrikam_base64.txt
 
 # Scan contoso (default)
-python -m m365_security_engine
+python run.py
 
 # Scan fabrikam explicitly
-python -m m365_security_engine --profile fabrikam
+python run.py --profile fabrikam
 ```
 
 ---
@@ -249,7 +276,7 @@ Reports are written to `./m365_scan_output/` (override with `--output-dir`):
 ## Additional CLI Options
 
 ```bash
-python -m m365_security_engine [options]
+python run.py [options]
 
   --profile/-p <name>        Named profile to use
   --tenant-id  <GUID>        Tenant ID (ad-hoc, no profile needed)
@@ -295,7 +322,7 @@ Alternatively, create a `config.json` to store settings:
 Then run:
 
 ```bash
-python -m m365_security_engine --config config.json
+python run.py --config config.json
 ```
 
 ---
@@ -370,9 +397,10 @@ Domain weights: Identity 25%, Conditional Access 20%, Privileged Access 20%, Dev
 ## Files
 
 ```
-m365_security_engine/
+M365-Security-Remediation/
 ├── __init__.py              # Package root
 ├── __main__.py              # CLI entry point & orchestrator
+├── run.py                   # Launcher (use this instead of python -m)
 ├── config.py                # Configuration & constants
 ├── profiles.py              # Multi-tenant profile management
 ├── requirements.txt         # Python dependencies
