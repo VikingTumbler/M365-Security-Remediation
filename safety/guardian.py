@@ -122,7 +122,18 @@ class SafetyGuardian:
     @staticmethod
     def print_banner():
         """Print the read-only warning banner."""
-        banner = """
+        import sys
+        # Use Unicode box-drawing only when stdout is an interactive terminal
+        # that knowably supports UTF-8.  Piped/redirected output (e.g. captured
+        # in PowerShell) or CP1252 consoles fall back to ASCII.
+        enc = getattr(sys.stdout, "encoding", "") or ""
+        unicode_ok = (
+            sys.stdout.isatty()
+            and enc.lower().replace("-", "") in ("utf8", "utf16", "utf32")
+        )
+
+        if unicode_ok:
+            banner = """
 ╔═══════════════════════════════════════════════════════════════════════════╗
 ║                                                                         ║
 ║   ██████  ███████  █████  ██████        ██████  ███    ██ ██      ██    ║
@@ -133,11 +144,23 @@ class SafetyGuardian:
 ║                                                                         ║
 ║   READ-ONLY SECURITY INTELLIGENCE SCAN — NO CHANGES WILL BE MADE       ║
 ║                                                                         ║
-║   • All API calls are GET/read-only                                     ║
-║   • No policies, users, or settings will be modified                    ║
-║   • Safety Guardian enforces read-only at the HTTP layer                ║
-║   • Every request is validated before execution                         ║
+║   * All API calls are GET/read-only                                     ║
+║   * No policies, users, or settings will be modified                    ║
+║   * Safety Guardian enforces read-only at the HTTP layer                ║
+║   * Every request is validated before execution                         ║
 ║                                                                         ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 """
-        print(banner)
+            try:
+                print(banner)
+                return
+            except UnicodeEncodeError:
+                pass  # fall through to ASCII banner
+
+        # ASCII fallback for CP1252 / non-Unicode terminals
+        print("=" * 75)
+        print("  READ-ONLY SECURITY INTELLIGENCE SCAN -- NO CHANGES WILL BE MADE")
+        print("  * All API calls are GET/read-only")
+        print("  * No policies, users, or settings will be modified")
+        print("  * Safety Guardian enforces read-only at the HTTP layer")
+        print("=" * 75)
