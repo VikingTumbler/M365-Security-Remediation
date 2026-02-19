@@ -333,20 +333,23 @@ async def run_collection(
 
     for collector, result in zip(collectors, completed):
         display_name = collector.__class__.__name__
-        if isinstance(result, Exception):
+        if isinstance(result, BaseException):
             print(f"  ❌ {display_name}: FAILED — {result}")
         else:
             count = sum(
                 len(v) if isinstance(v, list) else 1
-                for k, v in result.data.items()
+                for k, v in result.data.items()  # type: ignore
                 if not k.startswith("_")
             )
+            metadata = getattr(result, 'metadata', None)
+            duration = metadata.get('duration_seconds', '?') if isinstance(metadata, dict) else '?'
             print(f"  ✅ {display_name}: {count} data points collected "
-                  f"({result.metadata.get('duration_seconds', '?')}s)")
+                  f"({duration}s)")
 
             # Surface warnings (permission gaps, partial failures)
-            for w in result.metadata.get("warnings", []):
-                print(f"      ⚠  {w}")
+            if isinstance(metadata, dict):
+                for w in metadata.get("warnings", []):
+                    print(f"      ⚠  {w}")
 
             # Key by collector.name so analyzers can look up by domain name
             results[collector.name] = result
